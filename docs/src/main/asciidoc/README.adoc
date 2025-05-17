@@ -1,0 +1,26 @@
+image::https://github.com/spring-cloud/spring-cloud-gateway/workflows/Build/badge.svg?style=svg["Actions Status", link="https://github.com/spring-cloud/spring-cloud-gateway/actions"]
+image::https://codecov.io/gh/spring-cloud/spring-cloud-gateway/branch/main/graph/badge.svg["Codecov", link="https://codecov.io/gh/spring-cloud/spring-cloud-gateway/branch/main"]
+
+
+include::intro.adoc[]
+
+== Features
+
+* Java 8
+* Spring Framework 5
+* Spring Boot 2
+* Dynamic routing
+* Route matching built into Spring Handler Mapping
+* Route matching on HTTP Request (Path, Method, Header, Host, etc...)
+* Filters scoped to Matching Route
+* Filters can modify downstream HTTP Request and HTTP Response (Add/Remove Headers, Add/Remove Parameters, Rewrite Path, Set Path, Hystrix, etc...)
+* API or configuration driven
+* Supports Spring Cloud `DiscoveryClient` for configuring Routes
+
+== Building
+
+include::https://raw.githubusercontent.com/spring-cloud/spring-cloud-build/3.1.x/docs/src/main/asciidoc/building-jdk8.adoc[]
+
+== Contributing
+
+include::https://raw.githubusercontent.com/spring-cloud/spring-cloud-build/3.1.x/docs/src/main/asciidoc/contributing.adoc[]
