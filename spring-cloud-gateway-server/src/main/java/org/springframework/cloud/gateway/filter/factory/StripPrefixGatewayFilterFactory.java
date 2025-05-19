@@ -61,10 +61,15 @@ public class StripPrefixGatewayFilterFactory
 			public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
 				ServerHttpRequest request = exchange.getRequest();
 				addOriginalRequestUrl(exchange, request.getURI());
+
+				// 获得原始 path
 				String path = request.getURI().getRawPath();
+
+				// 按照 / 进行分隔
 				String[] originalParts = StringUtils.tokenizeToStringArray(path, "/");
 
 				// all new paths start with /
+				// newPath 以 / 开头，所以先预备一个 /
 				StringBuilder newPath = new StringBuilder("/");
 				for (int i = 0; i < originalParts.length; i++) {
 					if (i >= config.getParts()) {

@@ -48,6 +48,9 @@ public class ConfigurationService implements ApplicationEventPublisherAware {
 
 	private BeanFactory beanFactory;
 
+	/**
+	 * + 类型转换服务。spring-core 提供支持。
+	 */
 	private Supplier<ConversionService> conversionService;
 
 	private SpelExpressionParser parser = new SpelExpressionParser();
@@ -57,6 +60,9 @@ public class ConfigurationService implements ApplicationEventPublisherAware {
 	public ConfigurationService(BeanFactory beanFactory, ObjectProvider<ConversionService> conversionService,
 			ObjectProvider<Validator> validator) {
 		this.beanFactory = beanFactory;
+		// 由下面这种写法演变过来的
+		// this.conversionService = () -> conversionService.getIfAvailable();
+		// this.conversionService = conversionService::getIfAvailable;
 		this.conversionService = conversionService::getIfAvailable;
 		this.validator = validator::getIfAvailable;
 	}
@@ -97,6 +103,8 @@ public class ConfigurationService implements ApplicationEventPublisherAware {
 		List<ConfigurationPropertySource> propertySources = Collections
 				.singletonList(new MapConfigurationPropertySource(properties));
 
+		// Binder 是 Spring Boot 项目的绑定器
+		// 传进去属性源、转换服务
 		return new Binder(propertySources, null, conversionService).bindOrCreate(configurationPropertyName, bindable,
 				handler);
 	}
@@ -145,7 +153,10 @@ public class ConfigurationService implements ApplicationEventPublisherAware {
 
 		@Override
 		protected T doBind() {
+			// 获得 ConfigClass（所以我们要实现 getConfigClass 方法）
 			Bindable<T> bindable = Bindable.of(this.configurable.getConfigClass());
+
+			// 传入 shortcutFieldPrefix
 			T bound = bindOrCreate(bindable, this.normalizedProperties, this.configurable.shortcutFieldPrefix(),
 					/* this.name, */this.service.validator.get(), this.service.conversionService.get());
 
@@ -231,6 +242,9 @@ public class ConfigurationService implements ApplicationEventPublisherAware {
 
 		protected abstract T doBind();
 
+		/**
+		 * 将属性绑定到 Config
+		 */
 		public T bind() {
 			validate();
 			Assert.hasText(this.name, "name may not be empty");

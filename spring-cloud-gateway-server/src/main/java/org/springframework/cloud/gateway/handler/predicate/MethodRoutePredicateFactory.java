@@ -56,6 +56,7 @@ public class MethodRoutePredicateFactory extends AbstractRoutePredicateFactory<M
 		return new GatewayPredicate() {
 			@Override
 			public boolean test(ServerWebExchange exchange) {
+				// 允许的请求方法可能支持多个，所以使用了 Stream API anyMatch
 				HttpMethod requestMethod = exchange.getRequest().getMethod();
 				return stream(config.getMethods()).anyMatch(httpMethod -> httpMethod == requestMethod);
 			}

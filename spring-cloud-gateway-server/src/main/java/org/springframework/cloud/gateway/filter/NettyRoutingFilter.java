@@ -119,6 +119,7 @@ public class NettyRoutingFilter implements GlobalFilter, Ordered {
 
 		ServerHttpRequest request = exchange.getRequest();
 
+		// 解析为 reactor 的 HttpMethod
 		final HttpMethod method = HttpMethod.valueOf(request.getMethodValue());
 		final String url = requestUrl.toASCIIString();
 
@@ -234,7 +235,7 @@ public class NettyRoutingFilter implements GlobalFilter, Ordered {
 	/**
 	 * Creates a new HttpClient with per route timeout configuration. Sub-classes that
 	 * override, should call super.getHttpClient() if they want to honor the per route
-	 * timeout configuration.
+	 * timeout configuration. 获得一个 HttpClient
 	 * @param route the current route.
 	 * @param exchange the current ServerWebExchange.
 	 * @return the configured HttpClient.

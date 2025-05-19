@@ -51,13 +51,19 @@ public class FilteringWebHandler implements WebHandler {
 
 	private final List<GatewayFilter> globalFilters;
 
+	/**
+	 * 构造一个具有过滤能力的 WebHandler
+	 * @param globalFilters 全局过滤器
+	 */
 	public FilteringWebHandler(List<GlobalFilter> globalFilters) {
 		this.globalFilters = loadFilters(globalFilters);
 	}
 
 	private static List<GatewayFilter> loadFilters(List<GlobalFilter> filters) {
 		return filters.stream().map(filter -> {
+			// 将全局过滤器用 GatewayFilterAdapter 适配成 GatewayFilter
 			GatewayFilterAdapter gatewayFilter = new GatewayFilterAdapter(filter);
+			// 如果实现了 Ordered，那么就继续包装成 OrderedGatewayFilter
 			if (filter instanceof Ordered) {
 				int order = ((Ordered) filter).getOrder();
 				return new OrderedGatewayFilter(gatewayFilter, order);
@@ -76,7 +82,10 @@ public class FilteringWebHandler implements WebHandler {
 		Route route = exchange.getRequiredAttribute(GATEWAY_ROUTE_ATTR);
 		List<GatewayFilter> gatewayFilters = route.getFilters();
 
+		// 先放全局过滤器
 		List<GatewayFilter> combined = new ArrayList<>(this.globalFilters);
+
+		// 在放路由过滤器
 		combined.addAll(gatewayFilters);
 		// TODO: needed or cached?
 		AnnotationAwareOrderComparator.sort(combined);
@@ -85,15 +94,29 @@ public class FilteringWebHandler implements WebHandler {
 			logger.debug("Sorted gatewayFilterFactories: " + combined);
 		}
 
+		// 开始处理请求
+		// 创建过滤器链 DefaultGatewayFilterChain，将请求传进去
 		return new DefaultGatewayFilterChain(combined).filter(exchange);
 	}
 
+	/**
+	 * 默认的，也是唯一的 {@link GatewayFilterChain} 实现类
+	 */
 	private static class DefaultGatewayFilterChain implements GatewayFilterChain {
 
+		/**
+		 * 当前过滤器的位置。final 表示这不能变，所以每次都是创建一个新的。
+		 */
 		private final int index;
 
+		/**
+		 * 所有的过滤器
+		 */
 		private final List<GatewayFilter> filters;
 
+		/**
+		 * 构造一个 filter chain。index 默认为 0，表示入口。
+		 */
 		DefaultGatewayFilterChain(List<GatewayFilter> filters) {
 			this.filters = filters;
 			this.index = 0;
@@ -110,9 +133,12 @@ public class FilteringWebHandler implements WebHandler {
 
 		@Override
 		public Mono<Void> filter(ServerWebExchange exchange) {
+			// defer 延迟计算 Mono
+			// 相比较一般的 Mono，defer 不会立即执行，而是会在调用 Mono 的 subscribe 方法时才执行
 			return Mono.defer(() -> {
 				if (this.index < filters.size()) {
 					GatewayFilter filter = filters.get(this.index);
+					// 进入下一个 filter (index + 1)
 					DefaultGatewayFilterChain chain = new DefaultGatewayFilterChain(this, this.index + 1);
 					return filter.filter(exchange, chain);
 				}
