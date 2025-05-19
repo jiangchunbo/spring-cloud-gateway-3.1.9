@@ -235,8 +235,7 @@ public final class ServerWebExchangeUtils {
 			try {
 				UriComponentsBuilder.fromUri(uri).build(true);
 				return true;
-			}
-			catch (IllegalArgumentException ignored) {
+			} catch (IllegalArgumentException ignored) {
 				if (log.isTraceEnabled()) {
 					log.trace("Error in containsEncodedParts", ignored);
 				}
@@ -254,8 +253,7 @@ public final class ServerWebExchangeUtils {
 		try {
 			int status = Integer.parseInt(statusString);
 			httpStatus = HttpStatus.resolve(status);
-		}
-		catch (NumberFormatException e) {
+		} catch (NumberFormatException e) {
 			// try the enum string
 			httpStatus = HttpStatus.valueOf(statusString.toUpperCase());
 		}
@@ -294,8 +292,7 @@ public final class ServerWebExchangeUtils {
 			newVariables.putAll(existingVariables);
 			newVariables.putAll(uriVariables);
 			exchange.getAttributes().put(URI_TEMPLATE_VARIABLES_ATTRIBUTE, newVariables);
-		}
-		else {
+		} else {
 			exchange.getAttributes().put(URI_TEMPLATE_VARIABLES_ATTRIBUTE, uriVariables);
 		}
 	}
@@ -311,13 +308,14 @@ public final class ServerWebExchangeUtils {
 	 * {@link #CACHED_SERVER_HTTP_REQUEST_DECORATOR_ATTR} respectively. This method is
 	 * useful when the {@link ServerWebExchange} can not be modified, such as a
 	 * {@link RoutePredicateFactory}.
+	 *
 	 * @param exchange the available ServerWebExchange.
 	 * @param function a function that accepts the created ServerHttpRequestDecorator.
-	 * @param <T> generic type for the return {@link Mono}.
+	 * @param <T>      generic type for the return {@link Mono}.
 	 * @return Mono of type T created by the function parameter.
 	 */
 	public static <T> Mono<T> cacheRequestBodyAndRequest(ServerWebExchange exchange,
-			Function<ServerHttpRequest, Mono<T>> function) {
+														 Function<ServerHttpRequest, Mono<T>> function) {
 		return cacheRequestBody(exchange, true, function);
 	}
 
@@ -325,13 +323,14 @@ public final class ServerWebExchangeUtils {
 	 * Caches the request body in a ServerWebExchange attributes. The attribute is
 	 * {@link #CACHED_REQUEST_BODY_ATTR}. This method is useful when the
 	 * {@link ServerWebExchange} can be mutated, such as a {@link GatewayFilterFactory}/
+	 *
 	 * @param exchange the available ServerWebExchange.
 	 * @param function a function that accepts the created ServerHttpRequestDecorator.
-	 * @param <T> generic type for the return {@link Mono}.
+	 * @param <T>      generic type for the return {@link Mono}.
 	 * @return Mono of type T created by the function parameter.
 	 */
 	public static <T> Mono<T> cacheRequestBody(ServerWebExchange exchange,
-			Function<ServerHttpRequest, Mono<T>> function) {
+											   Function<ServerHttpRequest, Mono<T>> function) {
 		return cacheRequestBody(exchange, false, function);
 	}
 
@@ -341,16 +340,17 @@ public final class ServerWebExchangeUtils {
 	 * can not mutate the ServerWebExchange (such as a Predicate), setting
 	 * cacheDecoratedRequest to true will put a {@link ServerHttpRequestDecorator} in an
 	 * attribute {@link #CACHED_SERVER_HTTP_REQUEST_DECORATOR_ATTR} for adaptation later.
-	 * @param exchange the available ServerWebExchange.
+	 *
+	 * @param exchange              the available ServerWebExchange.
 	 * @param cacheDecoratedRequest if true, the ServerHttpRequestDecorator will be
-	 * cached.
-	 * @param function a function that accepts a ServerHttpRequest. It can be the created
-	 * ServerHttpRequestDecorator or the original if there is no body.
-	 * @param <T> generic type for the return {@link Mono}.
+	 *                              cached.
+	 * @param function              a function that accepts a ServerHttpRequest. It can be the created
+	 *                              ServerHttpRequestDecorator or the original if there is no body.
+	 * @param <T>                   generic type for the return {@link Mono}.
 	 * @return Mono of type T created by the function parameter.
 	 */
 	private static <T> Mono<T> cacheRequestBody(ServerWebExchange exchange, boolean cacheDecoratedRequest,
-			Function<ServerHttpRequest, Mono<T>> function) {
+												Function<ServerHttpRequest, Mono<T>> function) {
 		ServerHttpResponse response = exchange.getResponse();
 		DataBufferFactory factory = response.bufferFactory();
 		// Join all the DataBuffers so we have a single DataBuffer for the body
@@ -360,7 +360,7 @@ public final class ServerWebExchangeUtils {
 	}
 
 	private static ServerHttpRequest decorate(ServerWebExchange exchange, DataBuffer dataBuffer,
-			boolean cacheDecoratedRequest) {
+											  boolean cacheDecoratedRequest) {
 		if (dataBuffer.readableByteCount() > 0) {
 			if (log.isTraceEnabled()) {
 				log.trace("retaining body in exchange attribute");
@@ -384,12 +384,10 @@ public final class ServerWebExchangeUtils {
 					if (dataBuffer instanceof NettyDataBuffer) {
 						NettyDataBuffer pdb = (NettyDataBuffer) dataBuffer;
 						return pdb.factory().wrap(pdb.getNativeBuffer().retainedSlice());
-					}
-					else if (dataBuffer instanceof DefaultDataBuffer) {
+					} else if (dataBuffer instanceof DefaultDataBuffer) {
 						DefaultDataBuffer ddf = (DefaultDataBuffer) dataBuffer;
 						return ddf.factory().wrap(Unpooled.wrappedBuffer(ddf.getNativeBuffer()).nioBuffer());
-					}
-					else {
+					} else {
 						throw new IllegalArgumentException(
 								"Unable to handle DataBuffer of type " + dataBuffer.getClass());
 					}
@@ -405,7 +403,8 @@ public final class ServerWebExchangeUtils {
 	/**
 	 * One place to handle forwarding using DispatcherHandler. Allows for common code to
 	 * be reused.
-	 * @param handler The DispatcherHandler.
+	 *
+	 * @param handler  The DispatcherHandler.
 	 * @param exchange The ServerWebExchange.
 	 * @return value from handler.
 	 */

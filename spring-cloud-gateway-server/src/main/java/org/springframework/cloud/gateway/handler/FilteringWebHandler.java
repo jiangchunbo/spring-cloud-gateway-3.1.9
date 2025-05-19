@@ -133,9 +133,9 @@ public class FilteringWebHandler implements WebHandler {
 
 		@Override
 		public Mono<Void> filter(ServerWebExchange exchange) {
-			// defer 延迟计算 Mono
-			// 相比较一般的 Mono，defer 不会立即执行，而是会在调用 Mono 的 subscribe 方法时才执行
+			// defer 表示延迟。定义一个延迟创建的 Mono
 			return Mono.defer(() -> {
+				// 如果没有遍历完 filters
 				if (this.index < filters.size()) {
 					GatewayFilter filter = filters.get(this.index);
 					// 进入下一个 filter (index + 1)
