@@ -110,7 +110,9 @@ public class FilteringWebHandler implements WebHandler {
 
 		@Override
 		public Mono<Void> filter(ServerWebExchange exchange) {
+			// defer 表示延迟。定义一个延迟创建的 Mono
 			return Mono.defer(() -> {
+				// 如果没有遍历完 filters
 				if (this.index < filters.size()) {
 					GatewayFilter filter = filters.get(this.index);
 					DefaultGatewayFilterChain chain = new DefaultGatewayFilterChain(this, this.index + 1);
