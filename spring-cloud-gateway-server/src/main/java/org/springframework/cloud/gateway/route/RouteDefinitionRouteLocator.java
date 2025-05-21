@@ -68,8 +68,8 @@ public class RouteDefinitionRouteLocator implements RouteLocator {
 	private final GatewayProperties gatewayProperties;
 
 	public RouteDefinitionRouteLocator(RouteDefinitionLocator routeDefinitionLocator,
-			List<RoutePredicateFactory> predicates, List<GatewayFilterFactory> gatewayFilterFactories,
-			GatewayProperties gatewayProperties, ConfigurationService configurationService) {
+									   List<RoutePredicateFactory> predicates, List<GatewayFilterFactory> gatewayFilterFactories,
+									   GatewayProperties gatewayProperties, ConfigurationService configurationService) {
 		this.routeDefinitionLocator = routeDefinitionLocator;
 		this.configurationService = configurationService;
 		initFactories(predicates);
@@ -118,8 +118,14 @@ public class RouteDefinitionRouteLocator implements RouteLocator {
 		});
 	}
 
+	/**
+	 * 将 {@link RouteDefinition} 转换为 {@link Route}
+	 */
 	private Route convertToRoute(RouteDefinition routeDefinition) {
+		// 拿到一个有序的 Predicate
 		AsyncPredicate<ServerWebExchange> predicate = combinePredicates(routeDefinition);
+
+		// 拿到 filter
 		List<GatewayFilter> gatewayFilters = getFilters(routeDefinition);
 
 		return Route.async(routeDefinition).asyncPredicate(predicate).replaceFilters(gatewayFilters).build();
@@ -160,8 +166,7 @@ public class RouteDefinitionRouteLocator implements RouteLocator {
 			GatewayFilter gatewayFilter = factory.apply(configuration);
 			if (gatewayFilter instanceof Ordered) {
 				ordered.add(gatewayFilter);
-			}
-			else {
+			} else {
 				ordered.add(new OrderedGatewayFilter(gatewayFilter, i + 1));
 			}
 		}
@@ -173,6 +178,8 @@ public class RouteDefinitionRouteLocator implements RouteLocator {
 		List<GatewayFilter> filters = new ArrayList<>();
 
 		// TODO: support option to apply defaults after route specific filters?
+
+		// 默认 filter
 		if (!this.gatewayProperties.getDefaultFilters().isEmpty()) {
 			filters.addAll(loadGatewayFilters(routeDefinition.getId(),
 					new ArrayList<>(this.gatewayProperties.getDefaultFilters())));
@@ -188,13 +195,17 @@ public class RouteDefinitionRouteLocator implements RouteLocator {
 	}
 
 	private AsyncPredicate<ServerWebExchange> combinePredicates(RouteDefinition routeDefinition) {
+		// 拿到 Predicate
 		List<PredicateDefinition> predicates = routeDefinition.getPredicates();
+
+		// 没有配？那么认为匹配一切
 		if (predicates == null || predicates.isEmpty()) {
 			// this is a very rare case, but possible, just match all
 			return AsyncPredicate.from(exchange -> true);
 		}
 		AsyncPredicate<ServerWebExchange> predicate = lookup(routeDefinition, predicates.get(0));
 
+		// 获取剩余的 PredicateDefinition，然后 lookup，然后 and 连接
 		for (PredicateDefinition andPredicate : predicates.subList(1, predicates.size())) {
 			AsyncPredicate<ServerWebExchange> found = lookup(routeDefinition, andPredicate);
 			predicate = predicate.and(found);
@@ -205,6 +216,7 @@ public class RouteDefinitionRouteLocator implements RouteLocator {
 
 	@SuppressWarnings("unchecked")
 	private AsyncPredicate<ServerWebExchange> lookup(RouteDefinition route, PredicateDefinition predicate) {
+		// 比如 predicate.getName() 是 Path，那么就会找到 PathRoutePredicateFactory
 		RoutePredicateFactory<Object> factory = this.predicates.get(predicate.getName());
 		if (factory == null) {
 			throw new IllegalArgumentException("Unable to find RoutePredicateFactory with name " + predicate.getName());

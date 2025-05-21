@@ -192,18 +192,28 @@ public class GatewayAutoConfiguration {
 		return new RouteLocatorBuilder(context);
 	}
 
+	/**
+	 * 路由定义 Locator。特别重要。
+	 */
 	@Bean
 	@ConditionalOnMissingBean
 	public PropertiesRouteDefinitionLocator propertiesRouteDefinitionLocator(GatewayProperties properties) {
 		return new PropertiesRouteDefinitionLocator(properties);
 	}
 
+	/**
+	 * 基于内存的 RouteDefinitionRepository
+	 */
 	@Bean
 	@ConditionalOnMissingBean(RouteDefinitionRepository.class)
 	public InMemoryRouteDefinitionRepository inMemoryRouteDefinitionRepository() {
 		return new InMemoryRouteDefinitionRepository();
 	}
 
+
+	/**
+	 * 这个是首要注入的
+	 */
 	@Bean
 	@Primary
 	public RouteDefinitionLocator routeDefinitionLocator(List<RouteDefinitionLocator> routeDefinitionLocators) {
@@ -218,7 +228,13 @@ public class GatewayAutoConfiguration {
 	}
 
 	/**
-	 * 路由定位器
+	 * 路由定位器。把配置文件里面的路由定义，转换为 RouteDefinition
+	 * @param properties
+	 * @param gatewayFilters GatewayFilter 工厂。还不包含 GlobalFilter
+	 * @param predicates
+	 * @param routeDefinitionLocator
+	 * @param configurationService
+	 * @return
 	 */
 	@Bean
 	public RouteLocator routeDefinitionRouteLocator(GatewayProperties properties,
@@ -228,6 +244,9 @@ public class GatewayAutoConfiguration {
 				configurationService);
 	}
 
+	/**
+	 * 这是首要注入的
+	 */
 	@Bean
 	@Primary
 	@ConditionalOnMissingBean(name = "cachedCompositeRouteLocator")

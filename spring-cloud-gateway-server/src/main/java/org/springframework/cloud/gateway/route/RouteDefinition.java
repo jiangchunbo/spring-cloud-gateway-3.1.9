@@ -61,7 +61,7 @@ public class RouteDefinition {
 	private List<FilterDefinition> filters = new ArrayList<>();
 
 	/**
-	 * 路由的方向
+	 * 路由的 URI。也就是路由会请求哪里。
 	 */
 	@NotNull
 	private URI uri;
