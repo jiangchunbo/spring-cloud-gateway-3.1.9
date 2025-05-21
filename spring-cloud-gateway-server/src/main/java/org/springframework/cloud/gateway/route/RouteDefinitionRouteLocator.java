@@ -93,8 +93,12 @@ public class RouteDefinitionRouteLocator implements RouteLocator {
 
 	@Override
 	public Flux<Route> getRoutes() {
+
+		// 将 route definition 转换为 Route 流
 		Flux<Route> routes = this.routeDefinitionLocator.getRouteDefinitions().map(this::convertToRoute);
 
+		// route definition error 是否要直接失败。
+		// 默认是直接失败
 		if (!gatewayProperties.isFailOnRouteDefinitionError()) {
 			// instead of letting error bubble up, continue
 			routes = routes.onErrorContinue((error, obj) -> {
@@ -105,6 +109,7 @@ public class RouteDefinitionRouteLocator implements RouteLocator {
 			});
 		}
 
+		// 没什么什么，只是为了记录一下日志
 		return routes.map(route -> {
 			if (logger.isDebugEnabled()) {
 				logger.debug("RouteDefinition matched: " + route.getId());

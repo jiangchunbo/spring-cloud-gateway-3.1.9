@@ -53,6 +53,7 @@ public class FilteringWebHandler implements WebHandler {
 
 	/**
 	 * 构造一个具有过滤能力的 WebHandler
+	 *
 	 * @param globalFilters 全局过滤器
 	 */
 	public FilteringWebHandler(List<GlobalFilter> globalFilters) {
@@ -60,16 +61,19 @@ public class FilteringWebHandler implements WebHandler {
 	}
 
 	private static List<GatewayFilter> loadFilters(List<GlobalFilter> filters) {
-		return filters.stream().map(filter -> {
-			// 将全局过滤器用 GatewayFilterAdapter 适配成 GatewayFilter
-			GatewayFilterAdapter gatewayFilter = new GatewayFilterAdapter(filter);
-			// 如果实现了 Ordered，那么就继续包装成 OrderedGatewayFilter
-			if (filter instanceof Ordered) {
-				int order = ((Ordered) filter).getOrder();
-				return new OrderedGatewayFilter(gatewayFilter, order);
-			}
-			return gatewayFilter;
-		}).collect(Collectors.toList());
+		// 其实就是个转换 GlobalFilter -> GatewayFilter
+		return filters
+				.stream()
+				.map(filter -> {
+					// 将全局过滤器用 GatewayFilterAdapter 适配成 GatewayFilter
+					GatewayFilterAdapter gatewayFilter = new GatewayFilterAdapter(filter);
+					// 如果实现了 Ordered，那么就继续包装成 OrderedGatewayFilter
+					if (filter instanceof Ordered) {
+						int order = ((Ordered) filter).getOrder();
+						return new OrderedGatewayFilter(gatewayFilter, order);
+					}
+					return gatewayFilter;
+				}).collect(Collectors.toList());
 	}
 
 	/*
@@ -79,15 +83,18 @@ public class FilteringWebHandler implements WebHandler {
 
 	@Override
 	public Mono<Void> handle(ServerWebExchange exchange) {
+		//
 		Route route = exchange.getRequiredAttribute(GATEWAY_ROUTE_ATTR);
 		List<GatewayFilter> gatewayFilters = route.getFilters();
 
-		// 先放全局过滤器
+		// 1. 全局过滤器
 		List<GatewayFilter> combined = new ArrayList<>(this.globalFilters);
 
-		// 在放路由过滤器
+		// 2. 再放 route 自己的过滤器
 		combined.addAll(gatewayFilters);
+
 		// TODO: needed or cached?
+		// 排序
 		AnnotationAwareOrderComparator.sort(combined);
 
 		if (logger.isDebugEnabled()) {
@@ -100,7 +107,10 @@ public class FilteringWebHandler implements WebHandler {
 	}
 
 	/**
-	 * 默认的，也是唯一的 {@link GatewayFilterChain} 实现类
+	 * 默认的，也是唯一的 {@link GatewayFilterChain} 实现类。
+	 * <p>
+	 * 这似乎是一个常量类，因为所有字段都是常量。
+	 * </p>
 	 */
 	private static class DefaultGatewayFilterChain implements GatewayFilterChain {
 
@@ -141,8 +151,7 @@ public class FilteringWebHandler implements WebHandler {
 					// 进入下一个 filter (index + 1)
 					DefaultGatewayFilterChain chain = new DefaultGatewayFilterChain(this, this.index + 1);
 					return filter.filter(exchange, chain);
-				}
-				else {
+				} else {
 					return Mono.empty(); // complete
 				}
 			});

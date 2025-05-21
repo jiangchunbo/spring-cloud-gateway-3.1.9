@@ -34,6 +34,7 @@ public class PropertiesRouteDefinitionLocator implements RouteDefinitionLocator 
 
 	@Override
 	public Flux<RouteDefinition> getRouteDefinitions() {
+		// 来自于 GatewayProperties，这是数据流的来源，交给下面的迭代
 		return Flux.fromIterable(this.properties.getRoutes());
 	}
 

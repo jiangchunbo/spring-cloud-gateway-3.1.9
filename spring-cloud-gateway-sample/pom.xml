@@ -99,7 +99,9 @@
 					<compilerArgs>
 						<arg>-parameters</arg>
 					</compilerArgs>
-				</configuration>
+          <source>9</source>
+          <target>9</target>
+        </configuration>
 				<executions>
 					<!-- Replacing default-compile as it is treated specially by maven -->
 					<execution>

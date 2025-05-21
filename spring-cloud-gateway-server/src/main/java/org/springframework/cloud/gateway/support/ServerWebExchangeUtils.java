@@ -354,37 +354,48 @@ public final class ServerWebExchangeUtils {
 		ServerHttpResponse response = exchange.getResponse();
 		DataBufferFactory factory = response.bufferFactory();
 		// Join all the DataBuffers so we have a single DataBuffer for the body
-		return DataBufferUtils.join(exchange.getRequest().getBody()).defaultIfEmpty(factory.wrap(EMPTY_BYTES))
+		return DataBufferUtils
+				.join(exchange.getRequest().getBody())
+				.defaultIfEmpty(factory.wrap(EMPTY_BYTES))
 				.map(dataBuffer -> decorate(exchange, dataBuffer, cacheDecoratedRequest))
 				.switchIfEmpty(Mono.just(exchange.getRequest())).flatMap(function);
 	}
 
 	private static ServerHttpRequest decorate(ServerWebExchange exchange, DataBuffer dataBuffer,
 											  boolean cacheDecoratedRequest) {
+		// 如果有可读的字节
 		if (dataBuffer.readableByteCount() > 0) {
 			if (log.isTraceEnabled()) {
 				log.trace("retaining body in exchange attribute");
 			}
 
+			// 获得 buffer
 			Object cachedDataBuffer = exchange.getAttribute(CACHED_REQUEST_BODY_ATTR);
 			// don't cache if body is already cached
+			// 如果已经缓存了，就不关心了
 			if (!(cachedDataBuffer instanceof DataBuffer)) {
 				exchange.getAttributes().put(CACHED_REQUEST_BODY_ATTR, dataBuffer);
 			}
 		}
 
+		// 创建了一个装饰器
+		// 难道作用就是调用 getBody 的时候，走缓存
 		ServerHttpRequest decorator = new ServerHttpRequestDecorator(exchange.getRequest()) {
 			@Override
 			public Flux<DataBuffer> getBody() {
 				return Mono.fromSupplier(() -> {
+					// 如果缓存 buffer 为空，返回 null
 					if (exchange.getAttribute(CACHED_REQUEST_BODY_ATTR) == null) {
 						// probably == downstream closed or no body
 						return null;
 					}
+
 					if (dataBuffer instanceof NettyDataBuffer) {
+						// 如果是 NettyDataBuffer
 						NettyDataBuffer pdb = (NettyDataBuffer) dataBuffer;
 						return pdb.factory().wrap(pdb.getNativeBuffer().retainedSlice());
 					} else if (dataBuffer instanceof DefaultDataBuffer) {
+						// 获得 buffer
 						DefaultDataBuffer ddf = (DefaultDataBuffer) dataBuffer;
 						return ddf.factory().wrap(Unpooled.wrappedBuffer(ddf.getNativeBuffer()).nioBuffer());
 					} else {

@@ -23,6 +23,9 @@ import reactor.core.publisher.Flux;
  */
 public interface RouteDefinitionLocator {
 
+	/**
+	 * 获得路由的定义。但是从哪儿获得呢？
+	 */
 	Flux<RouteDefinition> getRouteDefinitions();
 
 }

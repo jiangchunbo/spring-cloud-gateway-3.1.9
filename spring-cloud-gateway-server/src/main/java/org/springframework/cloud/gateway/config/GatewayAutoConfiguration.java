@@ -217,6 +217,9 @@ public class GatewayAutoConfiguration {
 		return new ConfigurationService(beanFactory, conversionService, validator);
 	}
 
+	/**
+	 * 路由定位器
+	 */
 	@Bean
 	public RouteLocator routeDefinitionRouteLocator(GatewayProperties properties,
 			List<GatewayFilterFactory> gatewayFilters, List<RoutePredicateFactory> predicates,

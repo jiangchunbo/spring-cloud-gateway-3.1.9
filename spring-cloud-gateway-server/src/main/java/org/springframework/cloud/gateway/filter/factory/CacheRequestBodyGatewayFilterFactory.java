@@ -37,6 +37,8 @@ import static org.springframework.cloud.gateway.support.GatewayToStringStyler.fi
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.CACHED_SERVER_HTTP_REQUEST_DECORATOR_ATTR;
 
 /**
+ * 缓存请求体
+ *
  * @author weizibin
  */
 public class CacheRequestBodyGatewayFilterFactory
@@ -70,35 +72,46 @@ public class CacheRequestBodyGatewayFilterFactory
 					return chain.filter(exchange);
 				}
 
+				// 如果已经缓存了请求体，就不处理了
 				Object cachedBody = exchange.getAttribute(ServerWebExchangeUtils.CACHED_REQUEST_BODY_ATTR);
 				if (cachedBody != null) {
 					return chain.filter(exchange);
 				}
 
+				// 
 				return ServerWebExchangeUtils.cacheRequestBodyAndRequest(exchange, (serverHttpRequest) -> {
+					// 创建 DefaultServerRequest
 					final ServerRequest serverRequest = ServerRequest
 							.create(exchange.mutate().request(serverHttpRequest).build(), messageReaders);
-					return serverRequest.bodyToMono((config.getBodyClass())).doOnNext(objectValue -> {
-						Object previousCachedBody = exchange.getAttributes()
-								.put(ServerWebExchangeUtils.CACHED_REQUEST_BODY_ATTR, objectValue);
-						if (previousCachedBody != null) {
-							// store previous cached body
-							exchange.getAttributes().put(CACHED_ORIGINAL_REQUEST_BODY_BACKUP_ATTR, previousCachedBody);
-						}
-					}).then(Mono.defer(() -> {
-						ServerHttpRequest cachedRequest = exchange
-								.getAttribute(CACHED_SERVER_HTTP_REQUEST_DECORATOR_ATTR);
-						Assert.notNull(cachedRequest, "cache request shouldn't be null");
-						exchange.getAttributes().remove(CACHED_SERVER_HTTP_REQUEST_DECORATOR_ATTR);
-						return chain.filter(exchange.mutate().request(cachedRequest).build()).doFinally(s -> {
-							//
-							Object backupCachedBody = exchange.getAttributes()
-									.get(CACHED_ORIGINAL_REQUEST_BODY_BACKUP_ATTR);
-							if (backupCachedBody instanceof DataBuffer) {
-								DataBufferUtils.release((DataBuffer) backupCachedBody);
-							}
-						});
-					}));
+
+					return serverRequest
+							.bodyToMono((config.getBodyClass()))
+							.doOnNext(objectValue -> {
+								// 把缓存的请求体放到 ServerWebExchange 的属性中
+								Object previousCachedBody = exchange.getAttributes()
+										.put(ServerWebExchangeUtils.CACHED_REQUEST_BODY_ATTR, objectValue);
+
+								// 如果之前缓存了，那么就放到另一个属性里
+								if (previousCachedBody != null) {
+									// store previous cached body
+									exchange.getAttributes().put(CACHED_ORIGINAL_REQUEST_BODY_BACKUP_ATTR, previousCachedBody);
+								}
+							})
+							.then(Mono.defer(() -> {
+								// 必须拿到装饰器
+								ServerHttpRequest cachedRequest = exchange
+										.getAttribute(CACHED_SERVER_HTTP_REQUEST_DECORATOR_ATTR);
+								Assert.notNull(cachedRequest, "cache request shouldn't be null");
+								exchange.getAttributes().remove(CACHED_SERVER_HTTP_REQUEST_DECORATOR_ATTR);
+								return chain.filter(exchange.mutate().request(cachedRequest).build()).doFinally(s -> {
+									//
+									Object backupCachedBody = exchange.getAttributes()
+											.get(CACHED_ORIGINAL_REQUEST_BODY_BACKUP_ATTR);
+									if (backupCachedBody instanceof DataBuffer) {
+										DataBufferUtils.release((DataBuffer) backupCachedBody);
+									}
+								});
+							}));
 				});
 			}
 

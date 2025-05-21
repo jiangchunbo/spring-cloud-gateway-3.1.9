@@ -35,23 +35,40 @@ import org.springframework.validation.annotation.Validated;
 import static org.springframework.util.StringUtils.tokenizeToStringArray;
 
 /**
+ * 表示一个路由的定义
+ *
  * @author Spencer Gibb
  */
 @Validated
 public class RouteDefinition {
 
+	/**
+	 * 路由 ID
+	 */
 	private String id;
 
+	/**
+	 * 路由的断言。何时走这个路由。
+	 */
 	@NotEmpty
 	@Valid
 	private List<PredicateDefinition> predicates = new ArrayList<>();
 
+	/**
+	 * 路由的过滤器
+	 */
 	@Valid
 	private List<FilterDefinition> filters = new ArrayList<>();
 
+	/**
+	 * 路由的方向
+	 */
 	@NotNull
 	private URI uri;
 
+	/**
+	 * 元数据
+	 */
 	private Map<String, Object> metadata = new HashMap<>();
 
 	private int order = 0;
