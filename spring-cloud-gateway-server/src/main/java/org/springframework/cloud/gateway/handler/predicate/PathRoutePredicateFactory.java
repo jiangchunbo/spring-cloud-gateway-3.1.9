@@ -79,11 +79,12 @@ public class PathRoutePredicateFactory extends AbstractRoutePredicateFactory<Pat
 
 	@Override
 	public Predicate<ServerWebExchange> apply(Config config) {
-		// 用于收集所有的 pattern
+		// 1. 用于收集所有的 pattern
 		final ArrayList<PathPattern> pathPatterns = new ArrayList<>();
 
 		// 这里有一个警告：正在使用一个非 final 字段作为锁
 		synchronized (this.pathPatternParser) {
+			// 设置匹配可能存在的末尾 /
 			pathPatternParser.setMatchOptionalTrailingSeparator(config.isMatchTrailingSlash());
 			config.getPatterns().forEach(pattern -> {
 				PathPattern pathPattern = this.pathPatternParser.parse(pattern);
@@ -97,6 +98,7 @@ public class PathRoutePredicateFactory extends AbstractRoutePredicateFactory<Pat
 						GATEWAY_PREDICATE_PATH_CONTAINER_ATTR,
 						s -> parsePath(exchange.getRequest().getURI().getRawPath()));
 
+				// 遍历每一个 path pattern，判断是否匹配 path，只取第一个命中的 path pattern
 				PathPattern match = null;
 				for (int i = 0; i < pathPatterns.size(); i++) {
 					PathPattern pathPattern = pathPatterns.get(i);
@@ -106,9 +108,12 @@ public class PathRoutePredicateFactory extends AbstractRoutePredicateFactory<Pat
 					}
 				}
 
+				// 匹配命中
 				if (match != null) {
 					traceMatch("Pattern", match.getPatternString(), path, true);
 					PathMatchInfo pathMatchInfo = match.matchAndExtract(path);
+					// 将匹配的 uri 变量放进去
+					// 比如你这么配 Path=/user/{userId} 那么 {userId} 就是一个变量
 					putUriTemplateVariables(exchange, pathMatchInfo.getUriVariables());
 					exchange.getAttributes().put(GATEWAY_PREDICATE_MATCHED_PATH_ATTR, match.getPatternString());
 					String routeId = (String) exchange.getAttributes().get(GATEWAY_PREDICATE_ROUTE_ATTR);
@@ -142,6 +147,9 @@ public class PathRoutePredicateFactory extends AbstractRoutePredicateFactory<Pat
 
 		private List<String> patterns = new ArrayList<>();
 
+		/**
+		 * 是否匹配末尾的 /。默认是 true
+		 */
 		private boolean matchTrailingSlash = true;
 
 		public List<String> getPatterns() {

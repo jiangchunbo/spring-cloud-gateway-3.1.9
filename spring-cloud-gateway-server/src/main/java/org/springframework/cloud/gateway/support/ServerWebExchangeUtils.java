@@ -285,6 +285,8 @@ public final class ServerWebExchangeUtils {
 
 	@SuppressWarnings("unchecked")
 	public static void putUriTemplateVariables(ServerWebExchange exchange, Map<String, String> uriVariables) {
+		// 如果已经存在，那么取出，构造一个新的 Map，合并进去；
+		// 如果不存在，直接 put 即可
 		if (exchange.getAttributes().containsKey(URI_TEMPLATE_VARIABLES_ATTRIBUTE)) {
 			Map<String, Object> existingVariables = (Map<String, Object>) exchange.getAttributes()
 					.get(URI_TEMPLATE_VARIABLES_ATTRIBUTE);
